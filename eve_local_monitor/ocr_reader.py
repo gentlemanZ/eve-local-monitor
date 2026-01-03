@@ -1,7 +1,7 @@
 """OCR module for reading EVE Online Local player list from screen."""
 
 import pytesseract
-from PIL import ImageGrab, Image
+from PIL import ImageGrab, Image, ImageEnhance, ImageFilter
 from typing import List, Tuple, Optional
 import re
 
@@ -49,9 +49,35 @@ class LocalReader:
             print(f"Error capturing screenshot: {e}")
             return None
 
+    def preprocess_image(self, image: Image.Image) -> Image.Image:
+        """
+        Preprocess image for better OCR accuracy.
+
+        Args:
+            image: Original PIL Image
+
+        Returns:
+            Preprocessed PIL Image
+        """
+        # Convert to grayscale
+        image = image.convert('L')
+
+        # Increase contrast
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)
+
+        # Increase sharpness
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(1.5)
+
+        # Apply slight blur to reduce noise (optional)
+        # image = image.filter(ImageFilter.MedianFilter(size=3))
+
+        return image
+
     def extract_text(self, image: Image.Image) -> str:
         """
-        Extract text from image using OCR.
+        Extract text from image using OCR with preprocessing.
 
         Args:
             image: PIL Image to process
@@ -60,8 +86,16 @@ class LocalReader:
             Extracted text
         """
         try:
+            # Preprocess image
+            processed = self.preprocess_image(image)
+
+            # Tesseract configuration for better accuracy
+            # --psm 6: Assume a single uniform block of text
+            # -c tessedit_char_whitelist: Only recognize these characters
+            custom_config = r'--psm 6 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 \'"'
+
             # Use Tesseract to extract text
-            text = pytesseract.image_to_string(image)
+            text = pytesseract.image_to_string(processed, config=custom_config)
             return text
         except Exception as e:
             print(f"Error extracting text: {e}")

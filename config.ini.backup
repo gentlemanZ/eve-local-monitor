@@ -1,0 +1,19 @@
+[General]
+# Your EVE character name (will be excluded from analysis)
+character_name = T zhong
+
+[OCR]
+# Screen region to capture Local player list (left, top, right, bottom)
+# Example for right side of 1920x1080 screen: 1500, 200, 1900, 800
+# Leave blank to configure interactively on first run
+region_left = 1767
+region_top = 300
+region_right = 1950
+region_bottom = 845
+
+[Monitoring]
+# How often to scan Local (in seconds)
+scan_interval = 10
+
+# Cache expiry for player data (in seconds)
+cache_expiry = 3600

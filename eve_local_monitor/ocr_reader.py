@@ -146,14 +146,22 @@ class LocalReader:
             # Remove leading/trailing whitespace and common OCR artifacts
             cleaned = cleaned.strip()
 
-            # Remove leading 'I' or 'l' that comes from OCR misreading '|' character
-            if cleaned.startswith('I ') or cleaned.startswith('l '):
-                cleaned = cleaned[2:]
+            # Remove leading 'I', 'l', 'B', or 'S' that comes from OCR misreading UI elements
+            # These often appear before names in EVE's Local window
+            while cleaned and cleaned[0] in 'IlBS' and len(cleaned) > 1 and cleaned[1] in ' ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                cleaned = cleaned[1:].strip()
+
+            # Remove trailing 'i' or 'l' (common OCR artifacts)
+            if cleaned and cleaned[-1] in 'il' and len(cleaned) > 2 and cleaned[-2] == ' ':
+                cleaned = cleaned[:-2].strip()
 
             # Only accept if it looks like a valid character name
             # Letters, numbers, spaces, apostrophes
             if re.match(r"^[A-Za-z0-9\s']+$", cleaned) and len(cleaned) >= 3:
-                player_names.append(cleaned.strip())
+                # Final validation: check if it's mostly letters (not just numbers)
+                letter_count = sum(c.isalpha() for c in cleaned)
+                if letter_count >= len(cleaned) * 0.6:  # At least 60% letters
+                    player_names.append(cleaned.strip())
 
         return player_names
 

@@ -146,13 +146,27 @@ class LocalReader:
             # Remove leading/trailing whitespace and common OCR artifacts
             cleaned = cleaned.strip()
 
-            # Remove leading 'I', 'l', 'B', or 'S' that comes from OCR misreading UI elements
-            # These often appear before names in EVE's Local window
-            while cleaned and cleaned[0] in 'IlBS' and len(cleaned) > 1 and cleaned[1] in ' ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-                cleaned = cleaned[1:].strip()
+            # Smarter removal of UI icon artifacts
+            # Pattern 1: Single char + space + name (e.g., "B BIGBUSSY" or "S Billy")
+            if len(cleaned) > 2 and cleaned[0] in 'IlBS' and cleaned[1] == ' ' and cleaned[2].isupper():
+                cleaned = cleaned[2:].strip()
 
-            # Remove trailing 'i' or 'l' (common OCR artifacts)
-            if cleaned and cleaned[-1] in 'il' and len(cleaned) > 2 and cleaned[-2] == ' ':
+            # Pattern 2: Double artifacts (e.g., "SB Billy")
+            if len(cleaned) > 3 and cleaned[0] in 'IlBS' and cleaned[1] in 'IlBS' and cleaned[2] == ' ':
+                cleaned = cleaned[3:].strip()
+
+            # Pattern 3: Merged artifacts - "B" or "S" stuck to name with no space
+            # Only remove if followed by uppercase + lowercase (e.g., "BAtlugh" -> "Atlugh")
+            # Don't remove if all caps (e.g., "BIGBUSSY" stays as-is)
+            if (len(cleaned) > 2 and
+                cleaned[0] in 'BS' and
+                cleaned[1].isupper() and
+                len(cleaned) > 2 and
+                cleaned[2].islower()):
+                cleaned = cleaned[1:]
+
+            # Remove trailing 'i' or 'l' followed by space (e.g., "Name i")
+            if len(cleaned) > 2 and cleaned[-2:].strip() and cleaned[-2] == ' ' and cleaned[-1] in 'il':
                 cleaned = cleaned[:-2].strip()
 
             # Only accept if it looks like a valid character name

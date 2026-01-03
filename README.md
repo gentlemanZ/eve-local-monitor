@@ -33,9 +33,19 @@ pip install -r requirements.txt
 
 ## Configuration
 
-1. Position your EVE Local window at a consistent location on screen
-2. Edit `config.ini` to set the screen region for OCR
-3. Set your character name to filter yourself out
+### Quick Setup (GUI Method)
+
+1. Copy `config.ini.example` to `config.ini`
+2. Run the region selector:
+   ```bash
+   python -m eve_local_monitor.region_selector
+   ```
+3. Click and drag to select your EVE Local player list area
+4. Set your character name in `config.ini` to filter yourself out
+
+### Manual Setup
+
+Edit `config.ini` to manually set the screen region coordinates and your character name.
 
 ## Usage
 

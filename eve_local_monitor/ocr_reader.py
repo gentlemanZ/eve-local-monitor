@@ -1,9 +1,10 @@
 """OCR module for reading EVE Online Local player list from screen."""
 
-import pytesseract
-from PIL import ImageGrab, Image
+from PIL import ImageGrab, Image, ImageEnhance, ImageFilter
 from typing import List, Tuple, Optional
 import re
+import numpy as np
+import easyocr
 
 
 class LocalReader:
@@ -19,8 +20,10 @@ class LocalReader:
         """
         self.region = region
 
-        # Configure pytesseract to use installed Tesseract
-        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        # Initialize EasyOCR
+        print("Initializing EasyOCR (this may take a moment on first run)...")
+        self.easyocr_reader = easyocr.Reader(['en'], gpu=False)
+        print("EasyOCR initialized successfully!")
 
     def configure_region(self, region: Tuple[int, int, int, int]):
         """
@@ -49,9 +52,35 @@ class LocalReader:
             print(f"Error capturing screenshot: {e}")
             return None
 
+    def preprocess_image(self, image: Image.Image) -> Image.Image:
+        """
+        Preprocess image for better OCR accuracy.
+
+        Args:
+            image: Original PIL Image
+
+        Returns:
+            Preprocessed PIL Image
+        """
+        # Convert to grayscale
+        image = image.convert('L')
+
+        # Increase contrast
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)
+
+        # Increase sharpness
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(1.5)
+
+        # Apply slight blur to reduce noise (optional)
+        # image = image.filter(ImageFilter.MedianFilter(size=3))
+
+        return image
+
     def extract_text(self, image: Image.Image) -> str:
         """
-        Extract text from image using OCR.
+        Extract text from image using EasyOCR with preprocessing.
 
         Args:
             image: PIL Image to process
@@ -60,8 +89,17 @@ class LocalReader:
             Extracted text
         """
         try:
-            # Use Tesseract to extract text
-            text = pytesseract.image_to_string(image)
+            # Preprocess image
+            processed = self.preprocess_image(image)
+
+            # Convert PIL Image to numpy array
+            img_array = np.array(processed)
+
+            # Read text with EasyOCR
+            results = self.easyocr_reader.readtext(img_array, detail=0, paragraph=False)
+
+            # Join all detected text with newlines
+            text = '\n'.join(results)
             return text
         except Exception as e:
             print(f"Error extracting text: {e}")
@@ -112,14 +150,36 @@ class LocalReader:
             # Remove leading/trailing whitespace and common OCR artifacts
             cleaned = cleaned.strip()
 
-            # Remove leading 'I' or 'l' that comes from OCR misreading '|' character
-            if cleaned.startswith('I ') or cleaned.startswith('l '):
-                cleaned = cleaned[2:]
+            # Smarter removal of UI icon artifacts
+            # Pattern 1: Single char + space + name (e.g., "B BIGBUSSY" or "S Billy")
+            if len(cleaned) > 2 and cleaned[0] in 'IlBS' and cleaned[1] == ' ' and cleaned[2].isupper():
+                cleaned = cleaned[2:].strip()
+
+            # Pattern 2: Double artifacts (e.g., "SB Billy")
+            if len(cleaned) > 3 and cleaned[0] in 'IlBS' and cleaned[1] in 'IlBS' and cleaned[2] == ' ':
+                cleaned = cleaned[3:].strip()
+
+            # Pattern 3: Merged artifacts - "B" or "S" stuck to name with no space
+            # Only remove if followed by uppercase + lowercase (e.g., "BAtlugh" -> "Atlugh")
+            # Don't remove if all caps (e.g., "BIGBUSSY" stays as-is)
+            if (len(cleaned) > 2 and
+                cleaned[0] in 'BS' and
+                cleaned[1].isupper() and
+                len(cleaned) > 2 and
+                cleaned[2].islower()):
+                cleaned = cleaned[1:]
+
+            # Remove trailing 'i' or 'l' followed by space (e.g., "Name i")
+            if len(cleaned) > 2 and cleaned[-2:].strip() and cleaned[-2] == ' ' and cleaned[-1] in 'il':
+                cleaned = cleaned[:-2].strip()
 
             # Only accept if it looks like a valid character name
             # Letters, numbers, spaces, apostrophes
             if re.match(r"^[A-Za-z0-9\s']+$", cleaned) and len(cleaned) >= 3:
-                player_names.append(cleaned.strip())
+                # Final validation: check if it's mostly letters (not just numbers)
+                letter_count = sum(c.isalpha() for c in cleaned)
+                if letter_count >= len(cleaned) * 0.6:  # At least 60% letters
+                    player_names.append(cleaned.strip())
 
         return player_names
 

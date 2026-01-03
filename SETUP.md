@@ -27,37 +27,57 @@ This installs:
 
 ## Configuration
 
-### Step 1: Position EVE Local Window
+### Step 1: Create Configuration File
 
-1. Launch EVE Online
-2. Position your Local chat window at a **consistent location** on screen
-3. Make sure the player list is visible
-4. **Recommended**: Place it on the right side of your screen for easy OCR
-
-### Step 2: Run Interactive Setup
+Copy the example configuration:
 
 ```bash
-python -m eve_local_monitor.main
+copy config.ini.example config.ini
 ```
 
-The app will ask you to configure the screen region:
+### Step 2: Configure Screen Region (GUI Method - Recommended)
 
+1. Launch EVE Online and position your Local chat window where you want it
+2. Run the region selector:
+   ```bash
+   python -m eve_local_monitor.region_selector
+   ```
+3. A fullscreen overlay will appear showing your screen
+4. **Click and drag** to select the area containing your Local player list
+5. Release the mouse to confirm - you'll see a dialog with coordinates
+6. Click "Yes" to save the region to `config.ini`
+
+**Tips for selecting the region**:
+- Make sure to capture the entire player name list area
+- Exclude the Local chat text area (we only need names)
+- The selection should be at least 50x50 pixels
+- You can press ESC to cancel and try again
+
+### Step 3: Set Your Character Name
+
+Edit `config.ini` and set your character name to filter yourself out:
+
+```ini
+[General]
+character_name = Your Character Name
 ```
-Position your EVE Local window on screen, then enter coordinates:
-(You can find coordinates by hovering over corners with mouse)
 
-Left X coordinate: 1500
-Top Y coordinate: 200
-Right X coordinate: 1900
-Bottom Y coordinate: 800
+### Alternative: Manual Configuration
+
+If you prefer to manually set coordinates, edit `config.ini`:
+
+```ini
+[OCR]
+region_left = 1500
+region_top = 200
+region_right = 1900
+region_bottom = 800
 ```
 
-**How to find coordinates**:
-- Use Windows built-in "Steps Recorder" (search for "psr" in Start menu)
-- Or use PowerShell: `[System.Windows.Forms.Cursor]::Position`
-- Or hover over Local window corners and estimate
-
-The app will take a test screenshot (`test_screenshot.png`) for you to verify.
+**How to find coordinates manually**:
+- Use PowerShell: `[System.Windows.Forms.Cursor]::Position`
+- Or use Windows built-in "Steps Recorder" (search for "psr" in Start menu)
+- Or hover over corners and estimate based on screen resolution
 
 ## Usage
 

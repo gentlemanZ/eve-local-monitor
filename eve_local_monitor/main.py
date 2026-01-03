@@ -47,16 +47,48 @@ class LocalThreatMonitor:
         sys.exit(0)
 
     def configure_region(self):
-        """Interactive region configuration."""
+        """Interactive region configuration using GUI selector."""
         print("="*60)
         print("EVE ONLINE LOCAL THREAT MONITOR - Setup")
         print("="*60)
         print()
-        print("First, we need to configure the screen region to capture.")
+        print("Opening region selector...")
+        print("Click and drag to select your EVE Local player list area")
         print()
-        print("Position your EVE Local window on screen, then enter coordinates:")
-        print("(You can find coordinates by hovering over corners with mouse)")
-        print()
+
+        try:
+            from .region_selector import RegionSelector, update_config_with_region
+
+            selector = RegionSelector()
+            region = selector.select_region()
+
+            if region:
+                self.screen_region = region
+                self.ocr.configure_region(self.screen_region)
+
+                # Update config file
+                update_config_with_region(region)
+
+                print(f"\nRegion configured: {self.screen_region}")
+                print("\nTaking test screenshot...")
+
+                self.ocr.save_debug_screenshot("test_screenshot.png")
+                print("Test screenshot saved to: test_screenshot.png")
+
+                return True
+            else:
+                print("\nSetup cancelled.")
+                return False
+
+        except Exception as e:
+            print(f"Error during region selection: {e}")
+            print("Falling back to manual entry...")
+            return self._configure_region_manual()
+
+    def _configure_region_manual(self):
+        """Manual region configuration (fallback)."""
+        print("\nEnter coordinates manually:")
+        print("(You can use find_coordinates.py to get these values)")
 
         try:
             left = int(input("Left X coordinate: "))
@@ -68,14 +100,7 @@ class LocalThreatMonitor:
             self.ocr.configure_region(self.screen_region)
 
             print(f"\nRegion configured: {self.screen_region}")
-            print("\nTaking test screenshot...")
-
-            self.ocr.save_debug_screenshot("test_screenshot.png")
-
-            print("Please check 'test_screenshot.png' to verify it captured the player list correctly.")
-            proceed = input("\nDoes it look correct? (y/n): ")
-
-            return proceed.lower() == 'y'
+            return True
 
         except ValueError:
             print("Invalid input. Please enter numbers only.")

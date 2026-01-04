@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-01-03
+
+### Added
+- Web-based dashboard for threat monitoring
+- Flask web server with REST API endpoints
+- Real-time threat data display in browser
+- Auto-refreshing web interface (2-second intervals)
+- EVE Online dark theme styling
+- Threat level indicators with color coding
+- Player corporation, alliance, and ship information display
+- Responsive web design for multiple screen sizes
+- Compact row layout to display ~30 players without scrolling
+- Threat level legend on dashboard (🔴🟡🟢⚪)
+- Control buttons: Shutdown, Restart, Reconfigure OCR
+- Windows launcher scripts (start_monitor.bat and start_monitor_background.vbs)
+- Comprehensive technical documentation (claude.md)
+
+### Changed
+- Monitor now starts web server automatically on http://127.0.0.1:5000
+- Threat data is now pushed to both CLI and web dashboard
+- Reduced row padding and font sizes for compact display
+
+### Fixed
+- Top ships now display ship names correctly (was showing [object Object])
+- Danger rating displays correctly (was showing undefined%)
+- Deaths/losses display correctly (was always showing 0)
+
 ## [1.0.0] - 2026-01-03
 
 ### Added

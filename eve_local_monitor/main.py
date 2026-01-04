@@ -10,21 +10,24 @@ from .esi_client import ESIClient
 from .zkill_client import ZKillClient
 from .threat_analyzer import ThreatAnalyzer
 from .display import ThreatDisplay
+from .web_server import ThreatWebServer
 
 
 class LocalThreatMonitor:
     """Main threat monitoring application."""
 
-    def __init__(self, screen_region=None, character_name="T zhong"):
+    def __init__(self, screen_region=None, character_name="T zhong", enable_web=True):
         """
         Initialize monitor.
 
         Args:
             screen_region: (left, top, right, bottom) for Local window
             character_name: Your character name to exclude
+            enable_web: Enable web dashboard (default: True)
         """
         self.screen_region = screen_region
         self.character_name = character_name
+        self.enable_web = enable_web
 
         # Initialize components
         self.ocr = LocalReader(region=screen_region)
@@ -32,6 +35,11 @@ class LocalThreatMonitor:
         self.zkill = ZKillClient()
         self.analyzer = ThreatAnalyzer(exclude_character=character_name)
         self.display = ThreatDisplay()
+
+        # Initialize web server if enabled
+        self.web_server = None
+        if self.enable_web:
+            self.web_server = ThreatWebServer(monitor=self)
 
         self.running = False
         self.scan_interval = 10  # Scan every 10 seconds
@@ -113,15 +121,48 @@ class LocalThreatMonitor:
         print("="*60)
         print(f"Character: {self.character_name}")
         print(f"Scan interval: {self.scan_interval} seconds")
+        if self.enable_web:
+            print(f"Web Dashboard: http://127.0.0.1:5000")
         print("="*60)
         print("\nStarting monitor... Press Ctrl+C to stop.")
         print()
+
+        # Start web server in background if enabled
+        if self.web_server:
+            self.web_server.start_background()
 
         self.running = True
         last_scan_time = 0
 
         while self.running:
             current_time = time.time()
+
+            # Check for web server control signals
+            if self.web_server:
+                if self.web_server.should_shutdown:
+                    print("\nShutdown signal received from web dashboard...")
+                    self.stop()
+                    sys.exit(0)
+
+                if self.web_server.should_restart:
+                    print("\nRestart signal received from web dashboard...")
+                    self.web_server.should_restart = False
+                    print("Restarting monitor...")
+                    # Just clear the cache and continue
+                    self.analyzer.player_cache.clear()
+                    print("Monitor restarted successfully.")
+
+                if self.web_server.should_reconfigure:
+                    print("\nReconfigure signal received from web dashboard...")
+                    self.web_server.should_reconfigure = False
+                    self.running = False
+                    if self.configure_region():
+                        print("Region reconfigured. Restarting monitor...")
+                        self.running = True
+                        last_scan_time = 0  # Force immediate scan
+                    else:
+                        print("Reconfiguration cancelled.")
+                        continue
 
             # Check if it's time to scan
             if current_time - last_scan_time >= self.scan_interval:
@@ -171,6 +212,10 @@ class LocalThreatMonitor:
 
         # Step 5: Display
         self.display.display_threats(threats, len(player_names))
+
+        # Step 6: Update web dashboard if enabled
+        if self.web_server:
+            self.web_server.update_threats(threats, len(player_names))
 
     def stop(self):
         """Stop monitoring."""

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Local Threat Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>EVE Online Local Threat Monitor</h1>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="label">Players in Local:</span>
+                    <span id="player-count" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Last Update:</span>
+                    <span id="last-update" class="value">Never</span>
+                </div>
+                <div class="status-item">
+                    <span id="connection-status" class="status-indicator online">●</span>
+                    <span class="label">Connected</span>
+                </div>
+            </div>
+
+            <div class="legend-section">
+                <div class="legend-title">Threat Levels:</div>
+                <div class="legend-items">
+                    <span class="legend-item">🔴 High (70%+)</span>
+                    <span class="legend-item">🟡 Medium (40-70%)</span>
+                    <span class="legend-item">🟢 Low (&lt;40%)</span>
+                    <span class="legend-item">⚪ Unknown</span>
+                </div>
+            </div>
+
+            <div class="control-buttons">
+                <button id="shutdown-btn" class="control-btn danger">Shutdown Monitor</button>
+                <button id="restart-btn" class="control-btn warning">Restart Monitor</button>
+                <button id="reconfig-btn" class="control-btn primary">Reconfigure OCR</button>
+            </div>
+        </header>
+
+        <main>
+            <div id="threats-container">
+                <div id="no-data" class="no-data">
+                    <p>Waiting for threat data...</p>
+                    <p class="hint">Make sure the monitor is running and scanning Local</p>
+                </div>
+
+                <div id="threats-list" class="threats-list" style="display: none;">
+                    <!-- Threats will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Auto-refreshing every 2 seconds</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

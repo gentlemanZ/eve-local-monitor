@@ -1,0 +1,309 @@
+/* EVE Online Dark Theme */
+:root {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-tertiary: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --border-color: #333;
+    --danger-high: #ff4444;
+    --danger-medium: #ffaa00;
+    --danger-low: #44ff44;
+    --danger-unknown: #888888;
+    --accent: #00d4ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
+
+header h1 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: var(--accent);
+}
+
+.status-bar {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-item .label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.status-item .value {
+    color: var(--text-primary);
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-indicator.online {
+    color: var(--danger-low);
+}
+
+.status-indicator.offline {
+    color: var(--danger-high);
+}
+
+/* Legend Section */
+.legend-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.legend-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.legend-items {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+/* Control Buttons */
+.control-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.control-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn.danger {
+    background: var(--danger-high);
+    color: white;
+}
+
+.control-btn.danger:hover {
+    background: #ff6666;
+}
+
+.control-btn.warning {
+    background: var(--danger-medium);
+    color: black;
+}
+
+.control-btn.warning:hover {
+    background: #ffbb33;
+}
+
+.control-btn.primary {
+    background: var(--accent);
+    color: black;
+}
+
+.control-btn.primary:hover {
+    background: #33ddff;
+}
+
+/* Main Content */
+main {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    min-height: 500px;
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.no-data p {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.no-data .hint {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Threats List */
+.threats-list {
+    padding: 10px;
+}
+
+.threat-item {
+    background: var(--bg-tertiary);
+    border-left: 4px solid;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.threat-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.threat-item.danger-high {
+    border-left-color: var(--danger-high);
+}
+
+.threat-item.danger-medium {
+    border-left-color: var(--danger-medium);
+}
+
+.threat-item.danger-low {
+    border-left-color: var(--danger-low);
+}
+
+.threat-item.danger-unknown {
+    border-left-color: var(--danger-unknown);
+}
+
+.threat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.threat-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.threat-indicator {
+    font-size: 16px;
+}
+
+.threat-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 9px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 1px;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 11px;
+}
+
+.danger-percent {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.danger-percent.high {
+    color: var(--danger-high);
+}
+
+.danger-percent.medium {
+    color: var(--danger-medium);
+}
+
+.danger-percent.low {
+    color: var(--danger-low);
+}
+
+.danger-percent.unknown {
+    color: var(--danger-unknown);
+}
+
+.ships-list {
+    color: var(--accent);
+    font-style: italic;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .status-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .threat-details {
+        grid-template-columns: 1fr;
+    }
+}

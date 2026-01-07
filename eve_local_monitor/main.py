@@ -172,7 +172,8 @@ class LocalThreatMonitor:
                     self.web_server.should_restart = False
                     print("Restarting monitor...")
                     # Just clear the cache and continue
-                    self.analyzer.player_cache.clear()
+                    self.analyzer.known_players.clear()
+                    self.analyzer.last_seen.clear()
                     print("Monitor restarted successfully.")
 
                 if self.web_server.should_reconfigure:

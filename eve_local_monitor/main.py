@@ -52,6 +52,11 @@ class LocalThreatMonitor:
         """Handle shutdown signals."""
         print("\n\nShutting down...")
         self.stop()
+        if self.web_server:
+            print("Stopping web server...")
+            # Give time for graceful shutdown
+            import time
+            time.sleep(1)
         sys.exit(0)
 
     def configure_region(self):
@@ -140,9 +145,27 @@ class LocalThreatMonitor:
             # Check for web server control signals
             if self.web_server:
                 if self.web_server.should_shutdown:
-                    print("\nShutdown signal received from web dashboard...")
-                    self.stop()
-                    sys.exit(0)
+                    print("\nStop signal received from web dashboard...")
+                    self.web_server.should_shutdown = False
+                    self.web_server.monitor_running = False
+                    self.running = False
+                    print("Monitor stopped. Web server still running.")
+                    print("Use the web dashboard to restart the monitor.")
+                    # Wait for start signal
+                    while not self.web_server.should_start and not self.web_server.should_exit:
+                        time.sleep(1)
+
+                    if self.web_server.should_exit:
+                        print("\nExit signal received. Shutting down completely...")
+                        sys.exit(0)
+
+                    if self.web_server.should_start:
+                        print("\nStart signal received from web dashboard...")
+                        self.web_server.should_start = False
+                        self.web_server.monitor_running = True
+                        self.running = True
+                        last_scan_time = 0
+                        print("Monitor restarted successfully.")
 
                 if self.web_server.should_restart:
                     print("\nRestart signal received from web dashboard...")

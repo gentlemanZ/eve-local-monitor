@@ -77,12 +77,12 @@ header h1 {
     display: inline-block;
 }
 
-.status-indicator.online {
+.status-indicator.running {
     color: var(--danger-low);
 }
 
-.status-indicator.offline {
-    color: var(--danger-high);
+.status-indicator.stopped {
+    color: var(--danger-medium);
 }
 
 /* Legend Section */
@@ -158,6 +158,15 @@ header h1 {
 
 .control-btn.primary:hover {
     background: #33ddff;
+}
+
+.control-btn.info {
+    background: #4488ff;
+    color: white;
+}
+
+.control-btn.info:hover {
+    background: #5599ff;
 }
 
 /* Main Content */

@@ -34,9 +34,12 @@ class ThreatWebServer:
         self.current_threats: List[Dict[str, Any]] = []
         self.player_count = 0
         self.last_update = time.time()
+        self.monitor_running = True
         self.should_shutdown = False
+        self.should_start = False
         self.should_restart = False
         self.should_reconfigure = False
+        self.should_exit = False
 
         # SSE clients
         self.sse_clients = []
@@ -78,16 +81,37 @@ class ThreatWebServer:
 
             return Response(event_stream(), mimetype='text/event-stream')
 
-        @self.app.route('/api/shutdown', methods=['POST'])
-        def shutdown():
-            """Shutdown the monitor."""
-            print("\nShutdown requested from web dashboard...")
+        @self.app.route('/api/status')
+        def get_status():
+            """Get monitor status."""
+            return jsonify({
+                'monitor_running': self.monitor_running
+            })
+
+        @self.app.route('/api/stop', methods=['POST'])
+        def stop_monitor():
+            """Stop the monitor (web server stays running)."""
+            print("\nStop requested from web dashboard...")
             self.should_shutdown = True
-            return jsonify({'status': 'shutdown initiated'})
+            return jsonify({'status': 'stop initiated'})
+
+        @self.app.route('/api/start', methods=['POST'])
+        def start_monitor():
+            """Start the monitor."""
+            print("\nStart requested from web dashboard...")
+            self.should_start = True
+            return jsonify({'status': 'start initiated'})
+
+        @self.app.route('/api/exit', methods=['POST'])
+        def exit_completely():
+            """Exit the entire application."""
+            print("\nExit requested from web dashboard...")
+            self.should_exit = True
+            return jsonify({'status': 'exit initiated'})
 
         @self.app.route('/api/restart', methods=['POST'])
         def restart():
-            """Restart the monitor."""
+            """Restart the monitor (clear cache)."""
             print("\nRestart requested from web dashboard...")
             self.should_restart = True
             return jsonify({'status': 'restart initiated'})

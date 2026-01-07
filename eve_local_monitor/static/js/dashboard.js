@@ -3,8 +3,11 @@
 class ThreatDashboard {
     constructor() {
         this.apiUrl = '/api/threats';
+        this.statusUrl = '/api/status';
         this.refreshInterval = 2000; // 2 seconds
+        this.statusCheckInterval = 1000; // 1 second
         this.lastUpdateTime = null;
+        this.monitorRunning = true;
         this.init();
     }
 
@@ -12,11 +15,12 @@ class ThreatDashboard {
         console.log('Initializing EVE Local Threat Monitor Dashboard');
         this.setupControlButtons();
         this.startAutoRefresh();
+        this.startStatusCheck();
     }
 
     setupControlButtons() {
-        document.getElementById('shutdown-btn').addEventListener('click', () => {
-            this.shutdownMonitor();
+        document.getElementById('start-stop-btn').addEventListener('click', () => {
+            this.toggleMonitor();
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
@@ -26,35 +30,55 @@ class ThreatDashboard {
         document.getElementById('reconfig-btn').addEventListener('click', () => {
             this.reconfigureOCR();
         });
+
+        document.getElementById('exit-btn').addEventListener('click', () => {
+            this.exitApplication();
+        });
     }
 
-    async shutdownMonitor() {
-        if (!confirm('Are you sure you want to shutdown the monitor?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/shutdown', { method: 'POST' });
-            if (response.ok) {
-                alert('Monitor shutdown initiated. The web server will stop shortly.');
-            } else {
-                alert('Failed to shutdown monitor. Check the console for errors.');
+    async toggleMonitor() {
+        if (this.monitorRunning) {
+            // Stop the monitor
+            if (!confirm('Stop the monitor? (Web dashboard will stay running)')) {
+                return;
             }
-        } catch (error) {
-            console.error('Error shutting down monitor:', error);
-            alert('Error communicating with monitor.');
+
+            try {
+                const response = await fetch('/api/stop', { method: 'POST' });
+                if (response.ok) {
+                    console.log('Monitor stopped.');
+                } else {
+                    alert('Failed to stop monitor. Check the console for errors.');
+                }
+            } catch (error) {
+                console.error('Error stopping monitor:', error);
+                alert('Error communicating with monitor.');
+            }
+        } else {
+            // Start the monitor
+            try {
+                const response = await fetch('/api/start', { method: 'POST' });
+                if (response.ok) {
+                    console.log('Monitor starting...');
+                } else {
+                    alert('Failed to start monitor. Check the console for errors.');
+                }
+            } catch (error) {
+                console.error('Error starting monitor:', error);
+                alert('Error communicating with monitor.');
+            }
         }
     }
 
     async restartMonitor() {
-        if (!confirm('Are you sure you want to restart the monitor?')) {
+        if (!confirm('Restart the monitor? (Clears cache and restarts scanning)')) {
             return;
         }
 
         try {
             const response = await fetch('/api/restart', { method: 'POST' });
             if (response.ok) {
-                alert('Monitor restart initiated.');
+                console.log('Monitor restarting...');
             } else {
                 alert('Failed to restart monitor. Check the console for errors.');
             }
@@ -62,6 +86,66 @@ class ThreatDashboard {
             console.error('Error restarting monitor:', error);
             alert('Error communicating with monitor.');
         }
+    }
+
+    async exitApplication() {
+        if (!confirm('Exit the entire application? (Monitor and web server will stop)')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/exit', { method: 'POST' });
+            if (response.ok) {
+                alert('Application shutting down. This page will become unavailable.');
+            } else {
+                alert('Failed to exit application. Check the console for errors.');
+            }
+        } catch (error) {
+            console.error('Error exiting application:', error);
+            alert('Error communicating with monitor.');
+        }
+    }
+
+    async checkMonitorStatus() {
+        try {
+            const response = await fetch(this.statusUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            this.updateMonitorStatus(data.monitor_running);
+        } catch (error) {
+            console.error('Error checking monitor status:', error);
+        }
+    }
+
+    updateMonitorStatus(isRunning) {
+        this.monitorRunning = isRunning;
+        const statusIndicator = document.getElementById('monitor-status');
+        const statusText = document.getElementById('monitor-status-text');
+        const startStopBtn = document.getElementById('start-stop-btn');
+
+        if (isRunning) {
+            statusIndicator.className = 'status-indicator running';
+            statusText.textContent = 'Running';
+            startStopBtn.textContent = 'Stop Monitor';
+            startStopBtn.className = 'control-btn warning';
+        } else {
+            statusIndicator.className = 'status-indicator stopped';
+            statusText.textContent = 'Stopped';
+            startStopBtn.textContent = 'Start Monitor';
+            startStopBtn.className = 'control-btn info';
+        }
+    }
+
+    startStatusCheck() {
+        // Initial check
+        this.checkMonitorStatus();
+
+        // Set up periodic status check
+        setInterval(() => {
+            this.checkMonitorStatus();
+        }, this.statusCheckInterval);
     }
 
     async reconfigureOCR() {

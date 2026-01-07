@@ -4,7 +4,7 @@
 
 EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OCR to read player names from the EVE Online Local chat window, then queries ESI and zKillboard APIs to provide threat intelligence. Features both a CLI display and a web-based dashboard.
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Language:** Python 3.8+
 **Primary Dependencies:** EasyOCR, Flask, Pillow, Requests
 
@@ -189,9 +189,12 @@ player_cache = {
 | `/` | GET | Serve dashboard HTML |
 | `/api/threats` | GET | Get current threat data (JSON) |
 | `/api/stream` | GET | SSE stream for real-time updates |
-| `/api/shutdown` | POST | Shutdown monitor |
+| `/api/status` | GET | Get monitor running status |
+| `/api/stop` | POST | Stop monitor (web server stays running) |
+| `/api/start` | POST | Start monitor |
 | `/api/restart` | POST | Restart monitor (clear cache) |
 | `/api/reconfigure` | POST | Launch region selector |
+| `/api/exit` | POST | Exit entire application (monitor + web server) |
 
 **Response Format (`/api/threats`):**
 ```json
@@ -219,11 +222,19 @@ player_cache = {
 - Background thread for Flask server
 - Main thread handles monitoring loop
 
-**Control Signal Flow:**
+**Control Signal Flow (v1.2.0 - Persistent Web Server):**
 ```
-Web Button Click → POST /api/{action} → Set flag (should_shutdown/restart/reconfigure)
+Stop Monitor Button:
+  Web UI → POST /api/stop → Set should_shutdown flag → Main loop stops → Wait for should_start
     ↓
-Main loop checks flags → Execute action → Clear flag
+  Monitor status = "Stopped", Web server stays running, Dashboard remains accessible
+    ↓
+  User clicks Start → POST /api/start → Set should_start flag → Main loop resumes
+
+Exit Application Button:
+  Web UI → POST /api/exit → Set should_exit flag → Main loop exits completely → sys.exit(0)
+
+Key Change: Web server persists independently of monitor state, allowing restart without losing UI access
 ```
 
 ### 6. Region Selector (`region_selector.py`)

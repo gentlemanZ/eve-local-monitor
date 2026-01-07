@@ -12,16 +12,17 @@
             <h1>EVE Online Local Threat Monitor</h1>
             <div class="status-bar">
                 <div class="status-item">
+                    <span class="label">Monitor:</span>
+                    <span id="monitor-status" class="status-indicator running">●</span>
+                    <span id="monitor-status-text" class="value">Running</span>
+                </div>
+                <div class="status-item">
                     <span class="label">Players in Local:</span>
                     <span id="player-count" class="value">0</span>
                 </div>
                 <div class="status-item">
                     <span class="label">Last Update:</span>
                     <span id="last-update" class="value">Never</span>
-                </div>
-                <div class="status-item">
-                    <span id="connection-status" class="status-indicator online">●</span>
-                    <span class="label">Connected</span>
                 </div>
             </div>
 
@@ -36,9 +37,10 @@
             </div>
 
             <div class="control-buttons">
-                <button id="shutdown-btn" class="control-btn danger">Shutdown Monitor</button>
-                <button id="restart-btn" class="control-btn warning">Restart Monitor</button>
+                <button id="start-stop-btn" class="control-btn warning">Stop Monitor</button>
+                <button id="restart-btn" class="control-btn info">Restart Monitor</button>
                 <button id="reconfig-btn" class="control-btn primary">Reconfigure OCR</button>
+                <button id="exit-btn" class="control-btn danger">Exit Application</button>
             </div>
         </header>
 

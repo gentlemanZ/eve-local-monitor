@@ -38,7 +38,16 @@ config.ini
 # Debug/Test Files
 test_screenshot*.png
 debug_screenshot*.png
+current_region.png
+live_local.png
 *.log
+
+# Screenshots (except the dynamic web one which is in static/)
+*.png
+!eve_local_monitor/static/screenshots/.gitkeep
+
+# Claude artifacts
+.claude/
 
 # OS
 .DS_Store

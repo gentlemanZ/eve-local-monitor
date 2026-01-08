@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 import re
 import numpy as np
 import easyocr
+import os
 
 
 class LocalReader:
@@ -19,6 +20,7 @@ class LocalReader:
                    If None, must be set via configure_region()
         """
         self.region = region
+        self.screenshot_path = None  # Path to save last screenshot
 
         # Initialize EasyOCR
         print("Initializing EasyOCR (this may take a moment on first run)...")
@@ -183,6 +185,17 @@ class LocalReader:
 
         return player_names
 
+    def set_screenshot_path(self, path: str):
+        """
+        Set the path where screenshots should be saved.
+
+        Args:
+            path: Full file path for saving screenshots
+        """
+        self.screenshot_path = path
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
     def read_local_players(self) -> List[str]:
         """
         Capture screenshot and extract player names.
@@ -193,6 +206,13 @@ class LocalReader:
         screenshot = self.capture_screenshot()
         if not screenshot:
             return []
+
+        # Save screenshot to file if path is set
+        if self.screenshot_path:
+            try:
+                screenshot.save(self.screenshot_path)
+            except Exception as e:
+                print(f"Warning: Could not save screenshot to {self.screenshot_path}: {e}")
 
         text = self.extract_text(screenshot)
         player_names = self.parse_player_names(text)

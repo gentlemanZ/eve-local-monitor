@@ -14,8 +14,10 @@ class ThreatDashboard {
     init() {
         console.log('Initializing EVE Local Threat Monitor Dashboard');
         this.setupControlButtons();
+        this.setupScreenshotToggle();
         this.startAutoRefresh();
         this.startStatusCheck();
+        this.startScreenshotRefresh();
     }
 
     setupControlButtons() {
@@ -292,6 +294,67 @@ class ThreatDashboard {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    setupScreenshotToggle() {
+        const toggleBtn = document.getElementById('screenshot-toggle');
+        const content = document.getElementById('screenshot-content');
+
+        toggleBtn.addEventListener('click', () => {
+            const isExpanded = content.classList.contains('expanded');
+
+            if (isExpanded) {
+                content.classList.remove('expanded');
+                toggleBtn.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                toggleBtn.classList.add('expanded');
+            }
+        });
+    }
+
+    updateScreenshot() {
+        const img = document.getElementById('ocr-screenshot');
+        const errorDiv = document.getElementById('screenshot-error');
+        const timeSpan = document.getElementById('screenshot-time');
+
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const newSrc = `/api/screenshot?t=${timestamp}`;
+
+        // Test if screenshot exists
+        fetch(newSrc)
+            .then(response => {
+                if (response.ok) {
+                    img.src = newSrc;
+                    img.style.display = 'block';
+                    errorDiv.style.display = 'none';
+
+                    // Update timestamp
+                    const now = new Date();
+                    timeSpan.textContent = now.toLocaleTimeString();
+                } else {
+                    img.style.display = 'none';
+                    errorDiv.style.display = 'block';
+                    timeSpan.textContent = 'No screenshot';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading screenshot:', error);
+                img.style.display = 'none';
+                errorDiv.style.display = 'block';
+                timeSpan.textContent = 'Error';
+            });
+    }
+
+    startScreenshotRefresh() {
+        // Initial load
+        this.updateScreenshot();
+
+        // Set up auto-refresh (same interval as threat data)
+        setInterval(() => {
+            this.updateScreenshot();
+        }, this.refreshInterval);
     }
 
     startAutoRefresh() {

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-07
+
+### Added
+- OCR screenshot display in web dashboard
+- Collapsible "Last OCR Screenshot" section at bottom of dashboard
+- `/api/screenshot` endpoint to serve the latest OCR capture
+- Screenshot timestamp display showing when last scan occurred
+- Auto-refresh of screenshot every 2 seconds along with threat data
+
+### Changed
+- OCR reader now saves each captured screenshot to `static/screenshots/last_scan.png`
+- Web dashboard footer now includes screenshot viewer section
+
 ## [1.2.0] - 2026-01-06
 
 ### Added

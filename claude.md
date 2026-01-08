@@ -4,7 +4,7 @@
 
 EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OCR to read player names from the EVE Online Local chat window, then queries ESI and zKillboard APIs to provide threat intelligence. Features both a CLI display and a web-based dashboard.
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Language:** Python 3.8+
 **Primary Dependencies:** EasyOCR, Flask, Pillow, Requests
 
@@ -69,6 +69,7 @@ EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OC
 - EasyOCR neural network-based text recognition
 - Smart artifact removal (removes UI icons: B, S, I, l characters with specific patterns)
 - Debug screenshot capability
+- Auto-save last screenshot to `static/screenshots/last_scan.png` for web display
 
 **Image Preprocessing Pipeline:**
 ```python
@@ -190,6 +191,7 @@ player_cache = {
 | `/api/threats` | GET | Get current threat data (JSON) |
 | `/api/stream` | GET | SSE stream for real-time updates |
 | `/api/status` | GET | Get monitor running status |
+| `/api/screenshot` | GET | Get latest OCR screenshot (PNG image) |
 | `/api/stop` | POST | Stop monitor (web server stays running) |
 | `/api/start` | POST | Start monitor |
 | `/api/restart` | POST | Restart monitor (clear cache) |
@@ -300,6 +302,7 @@ None required. All configuration via config.ini.
 - `templates/dashboard.html` - Main HTML structure
 - `static/css/dashboard.css` - EVE Online dark theme
 - `static/js/dashboard.js` - Dashboard logic
+- `static/screenshots/last_scan.png` - Latest OCR screenshot (auto-updated)
 
 ### JavaScript Dashboard Class
 
@@ -474,6 +477,18 @@ async fetchNewData() {
 
 ## Version History
 
+### v1.3.0 (2026-01-07)
+- Added OCR screenshot display in web dashboard
+- Collapsible screenshot viewer at bottom of dashboard
+- `/api/screenshot` endpoint for serving latest OCR capture
+- Auto-refresh of screenshot every 2 seconds
+- Screenshot timestamp display
+
+### v1.2.0 (2026-01-06)
+- Persistent web server (stays running when monitor stopped)
+- Start/Stop monitor controls
+- Monitor status indicator
+
 ### v1.1.0 (2026-01-03)
 - Added web-based dashboard
 - Flask REST API with control endpoints
@@ -610,9 +625,12 @@ async fetchNewData() {
 - [ ] Top ships display ship names (not [object Object])
 - [ ] Danger ratings display correctly (not undefined)
 - [ ] Deaths/losses display correctly (not always 0)
+- [ ] OCR screenshot displays in web dashboard
+- [ ] Screenshot updates with each scan
+- [ ] Screenshot section expands/collapses correctly
 - [ ] Launcher scripts work
 
 ---
 
-**Last Updated:** 2026-01-03
-**Document Version:** 1.0
+**Last Updated:** 2026-01-07
+**Document Version:** 1.1

@@ -58,6 +58,21 @@
         </main>
 
         <footer>
+            <div class="screenshot-section">
+                <div class="screenshot-header" id="screenshot-toggle">
+                    <span class="toggle-icon">▶</span>
+                    <span class="screenshot-title">Last OCR Screenshot</span>
+                    <span id="screenshot-time" class="screenshot-time">Never</span>
+                </div>
+                <div class="screenshot-content" id="screenshot-content">
+                    <div class="screenshot-wrapper">
+                        <img id="ocr-screenshot" src="/api/screenshot" alt="OCR Screenshot" />
+                        <div id="screenshot-error" class="screenshot-error" style="display: none;">
+                            No screenshot available yet. Waiting for first scan...
+                        </div>
+                    </div>
+                </div>
+            </div>
             <p>Auto-refreshing every 2 seconds</p>
         </footer>
     </div>

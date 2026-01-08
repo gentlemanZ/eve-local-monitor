@@ -1,6 +1,6 @@
 """Web server for EVE Local Threat Monitor dashboard."""
 
-from flask import Flask, render_template, jsonify, Response
+from flask import Flask, render_template, jsonify, Response, send_file
 from flask_cors import CORS
 import json
 import time
@@ -122,6 +122,21 @@ class ThreatWebServer:
             print("\nReconfigure requested from web dashboard...")
             self.should_reconfigure = True
             return jsonify({'status': 'reconfigure initiated'})
+
+        @self.app.route('/api/screenshot')
+        def get_screenshot():
+            """Get the latest OCR screenshot."""
+            screenshot_path = os.path.join(
+                os.path.dirname(__file__),
+                'static',
+                'screenshots',
+                'last_scan.png'
+            )
+            if os.path.exists(screenshot_path):
+                return send_file(screenshot_path, mimetype='image/png')
+            else:
+                # Return a placeholder or 404
+                return jsonify({'error': 'No screenshot available yet'}), 404
 
     def update_threats(self, threats: List[Dict[str, Any]], player_count: int):
         """

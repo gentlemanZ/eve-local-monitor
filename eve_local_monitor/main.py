@@ -36,6 +36,12 @@ class LocalThreatMonitor:
         self.analyzer = ThreatAnalyzer(exclude_character=character_name)
         self.display = ThreatDisplay()
 
+        # Set up screenshot saving path
+        if self.enable_web:
+            screenshot_dir = os.path.join(os.path.dirname(__file__), 'static', 'screenshots')
+            screenshot_path = os.path.join(screenshot_dir, 'last_scan.png')
+            self.ocr.set_screenshot_path(screenshot_path)
+
         # Initialize web server if enabled
         self.web_server = None
         if self.enable_web:

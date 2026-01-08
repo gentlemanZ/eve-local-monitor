@@ -305,6 +305,86 @@ footer {
     font-size: 14px;
 }
 
+/* Screenshot Section */
+.screenshot-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.screenshot-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.screenshot-header:hover {
+    background: var(--bg-tertiary);
+}
+
+.toggle-icon {
+    font-size: 12px;
+    color: var(--accent);
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.screenshot-header.expanded .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.screenshot-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.screenshot-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.screenshot-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: var(--bg-primary);
+}
+
+.screenshot-content.expanded {
+    max-height: 1000px;
+    transition: max-height 0.5s ease-in;
+}
+
+.screenshot-wrapper {
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#ocr-screenshot {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+}
+
+.screenshot-error {
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .status-bar {

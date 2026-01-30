@@ -169,6 +169,24 @@ header h1 {
     background: #5599ff;
 }
 
+.control-btn.success {
+    background: var(--danger-low);
+    color: black;
+}
+
+.control-btn.success:hover {
+    background: #66ff66;
+}
+
+.control-btn.secondary {
+    background: #666;
+    color: white;
+}
+
+.control-btn.secondary:hover {
+    background: #888;
+}
+
 /* Main Content */
 main {
     background: var(--bg-secondary);

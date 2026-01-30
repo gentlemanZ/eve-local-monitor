@@ -4,10 +4,12 @@ class ThreatDashboard {
     constructor() {
         this.apiUrl = '/api/threats';
         this.statusUrl = '/api/status';
+        this.standingFilterUrl = '/api/standing-filter';
         this.refreshInterval = 2000; // 2 seconds
         this.statusCheckInterval = 1000; // 1 second
         this.lastUpdateTime = null;
         this.monitorRunning = true;
+        this.standingFilterEnabled = true;
         this.init();
     }
 
@@ -18,9 +20,14 @@ class ThreatDashboard {
         this.startAutoRefresh();
         this.startStatusCheck();
         this.startScreenshotRefresh();
+        this.fetchStandingFilterStatus();
     }
 
     setupControlButtons() {
+        document.getElementById('standing-filter-btn').addEventListener('click', () => {
+            this.toggleStandingFilter();
+        });
+
         document.getElementById('start-stop-btn').addEventListener('click', () => {
             this.toggleMonitor();
         });
@@ -36,6 +43,48 @@ class ThreatDashboard {
         document.getElementById('exit-btn').addEventListener('click', () => {
             this.exitApplication();
         });
+    }
+
+    async fetchStandingFilterStatus() {
+        try {
+            const response = await fetch(this.standingFilterUrl);
+            if (response.ok) {
+                const data = await response.json();
+                this.updateStandingFilterUI(data.filter_friendly);
+            }
+        } catch (error) {
+            console.error('Error fetching standing filter status:', error);
+        }
+    }
+
+    async toggleStandingFilter() {
+        try {
+            const response = await fetch(`${this.standingFilterUrl}/toggle`, { method: 'POST' });
+            if (response.ok) {
+                const data = await response.json();
+                this.updateStandingFilterUI(data.filter_friendly);
+                console.log(`Standing filter ${data.filter_friendly ? 'enabled' : 'disabled'}`);
+            } else {
+                alert('Failed to toggle standing filter. Monitor may not be running.');
+            }
+        } catch (error) {
+            console.error('Error toggling standing filter:', error);
+            alert('Error communicating with monitor.');
+        }
+    }
+
+    updateStandingFilterUI(isEnabled) {
+        this.standingFilterEnabled = isEnabled;
+        const btn = document.getElementById('standing-filter-btn');
+        const statusSpan = document.getElementById('standing-filter-status');
+
+        if (isEnabled) {
+            btn.className = 'control-btn success';
+            statusSpan.textContent = 'ON';
+        } else {
+            btn.className = 'control-btn secondary';
+            statusSpan.textContent = 'OFF';
+        }
     }
 
     async toggleMonitor() {

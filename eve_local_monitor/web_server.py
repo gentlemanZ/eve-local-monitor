@@ -138,6 +138,30 @@ class ThreatWebServer:
                 # Return a placeholder or 404
                 return jsonify({'error': 'No screenshot available yet'}), 404
 
+        @self.app.route('/api/standing-filter')
+        def get_standing_filter():
+            """Get current standing filter status."""
+            if self.monitor and self.monitor.ocr:
+                return jsonify({
+                    'filter_friendly': self.monitor.ocr.filter_friendly,
+                    'friendly_colors': self.monitor.ocr.friendly_colors
+                })
+            return jsonify({'error': 'Monitor not available'}), 503
+
+        @self.app.route('/api/standing-filter/toggle', methods=['POST'])
+        def toggle_standing_filter():
+            """Toggle standing filter on/off."""
+            if self.monitor and self.monitor.ocr:
+                new_state = not self.monitor.ocr.filter_friendly
+                self.monitor.ocr.filter_friendly = new_state
+                self.monitor.filter_friendly = new_state
+                print(f"\nStanding filter toggled: {'ON' if new_state else 'OFF'}")
+                return jsonify({
+                    'filter_friendly': new_state,
+                    'message': f"Standing filter {'enabled' if new_state else 'disabled'}"
+                })
+            return jsonify({'error': 'Monitor not available'}), 503
+
     def update_threats(self, threats: List[Dict[str, Any]], player_count: int):
         """
         Update threat data (called by main monitor).

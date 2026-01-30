@@ -70,6 +70,7 @@ EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OC
 - Smart artifact removal (removes UI icons: B, S, I, l characters with specific patterns)
 - Debug screenshot capability
 - Auto-save last screenshot to `static/screenshots/last_scan.png` for web display
+- **Standing-based filtering**: Detects standing icon colors and filters out friendly players
 
 **Image Preprocessing Pipeline:**
 ```python
@@ -86,6 +87,15 @@ EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OC
 - Prevents breaking names like "BIGBUSSYFEMBOY"
 
 **Important:** Uses EasyOCR only (Tesseract was removed in v1.0.0 for better accuracy).
+
+**Standing Filter (v1.4.0):**
+The OCR reader can detect standing icon colors and filter out players with friendly standings:
+- Uses position-aware OCR to get bounding boxes for each name
+- Samples pixel colors at the left edge of each name's row
+- Classifies colors: blue, green, purple (friendly) vs white, orange, yellow, red (neutral/hostile)
+- Filters out friendly players before threat analysis
+
+Color detection samples a 5x5 pixel area and averages RGB values for classification.
 
 ### 2. ESI Client (`esi_client.py`)
 
@@ -283,7 +293,20 @@ region_bottom = 895
 [Monitoring]
 scan_interval = 10     # Seconds between scans
 cache_expiry = 3600    # Player data cache TTL (seconds)
+
+[Standing]
+filter_friendly = true              # Filter out friendly standings (default: true)
+friendly_colors = blue,green,purple # Colors to consider friendly
 ```
+
+**Standing Colors:**
+- `blue` - Good standing (friendly)
+- `green` - Corp/Alliance mate
+- `purple` - Fleet member
+- `white` - Neutral
+- `orange` - Bad standing
+- `yellow` - Terrible standing
+- `red` - War target/enemy
 
 ### Environment Variables
 
@@ -476,6 +499,13 @@ async fetchNewData() {
 3. Update HTML template if needed
 
 ## Version History
+
+### v1.4.0 (2026-01-29)
+- Added standing-based player filtering
+- Detects standing icon colors (blue, green, purple = friendly)
+- Filters out friendly players from threat monitoring
+- Configurable via `[Standing]` section in config.ini
+- Position-aware OCR for color detection
 
 ### v1.3.0 (2026-01-07)
 - Added OCR screenshot display in web dashboard

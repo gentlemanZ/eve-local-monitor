@@ -16,7 +16,8 @@ from .web_server import ThreatWebServer
 class LocalThreatMonitor:
     """Main threat monitoring application."""
 
-    def __init__(self, screen_region=None, character_name="T zhong", enable_web=True):
+    def __init__(self, screen_region=None, character_name="T zhong", enable_web=True,
+                 filter_friendly=True, friendly_colors=None):
         """
         Initialize monitor.
 
@@ -24,13 +25,21 @@ class LocalThreatMonitor:
             screen_region: (left, top, right, bottom) for Local window
             character_name: Your character name to exclude
             enable_web: Enable web dashboard (default: True)
+            filter_friendly: Filter out players with friendly standings
+            friendly_colors: List of colors to consider friendly
         """
         self.screen_region = screen_region
         self.character_name = character_name
         self.enable_web = enable_web
+        self.filter_friendly = filter_friendly
+        self.friendly_colors = friendly_colors or ["blue", "green", "purple"]
 
         # Initialize components
-        self.ocr = LocalReader(region=screen_region)
+        self.ocr = LocalReader(
+            region=screen_region,
+            filter_friendly=filter_friendly,
+            friendly_colors=self.friendly_colors
+        )
         self.esi = ESIClient()
         self.zkill = ZKillClient()
         self.analyzer = ThreatAnalyzer(exclude_character=character_name)
@@ -132,6 +141,10 @@ class LocalThreatMonitor:
         print("="*60)
         print(f"Character: {self.character_name}")
         print(f"Scan interval: {self.scan_interval} seconds")
+        if self.filter_friendly:
+            print(f"Standing filter: ON (filtering {', '.join(self.friendly_colors)})")
+        else:
+            print("Standing filter: OFF")
         if self.enable_web:
             print(f"Web Dashboard: http://127.0.0.1:5000")
         print("="*60)
@@ -284,20 +297,27 @@ def load_config():
         # Load scan interval
         scan_interval = config.getint('Monitoring', 'scan_interval', fallback=10)
 
-        return character_name, region, scan_interval
+        # Load standing filter settings
+        filter_friendly = config.getboolean('Standing', 'filter_friendly', fallback=True)
+        friendly_colors_str = config.get('Standing', 'friendly_colors', fallback='blue,green,purple')
+        friendly_colors = [c.strip() for c in friendly_colors_str.split(',')]
+
+        return character_name, region, scan_interval, filter_friendly, friendly_colors
 
     # Default values if no config file
-    return "T zhong", None, 10
+    return "T zhong", None, 10, True, ["blue", "green", "purple"]
 
 
 def main():
     """Main entry point."""
     # Load configuration
-    character_name, region, scan_interval = load_config()
+    character_name, region, scan_interval, filter_friendly, friendly_colors = load_config()
 
     monitor = LocalThreatMonitor(
         screen_region=region,
-        character_name=character_name
+        character_name=character_name,
+        filter_friendly=filter_friendly,
+        friendly_colors=friendly_colors
     )
 
     # Set scan interval

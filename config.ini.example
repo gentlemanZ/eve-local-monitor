@@ -17,3 +17,12 @@ scan_interval = 10
 
 # Cache expiry for player data (in seconds)
 cache_expiry = 3600
+
+[Standing]
+# Filter out players with friendly standings (blue, green, purple icons)
+# Set to false to see all players regardless of standing
+filter_friendly = true
+
+# Comma-separated list of colors to consider friendly and filter out
+# Available colors: blue, green, purple, white, orange, yellow, red
+friendly_colors = blue,green,purple

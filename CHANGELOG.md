@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-29
+
+### Added
+- Standing-based player filtering to focus on potential threats
+- Color detection for EVE standing icons (blue, green, purple, white, orange, yellow, red)
+- Position-aware OCR using EasyOCR bounding boxes
+- `[Standing]` configuration section in config.ini
+- `filter_friendly` option to enable/disable standing filter (default: true)
+- `friendly_colors` option to customize which standings to filter
+
+### Changed
+- OCR reader now uses position-aware extraction when standing filter is enabled
+- Monitor startup message now shows standing filter status
+- LocalReader constructor accepts filter_friendly and friendly_colors parameters
+
+### Technical
+- New methods in ocr_reader.py: classify_standing_color(), detect_standing_color(), is_friendly_standing(), extract_text_with_positions()
+- Color detection samples 5x5 pixel area and averages RGB values
+
 ## [1.3.0] - 2026-01-07
 
 ### Added

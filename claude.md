@@ -4,7 +4,7 @@
 
 EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OCR to read player names from the EVE Online Local chat window, then queries ESI and zKillboard APIs to provide threat intelligence. Features both a CLI display and a web-based dashboard.
 
-**Version:** 1.4.0
+**Version:** 1.5.0
 **Language:** Python 3.8+
 **Primary Dependencies:** EasyOCR, Flask, Pillow, Requests
 
@@ -635,6 +635,14 @@ async fetchNewData() {
 **Last Updated:** 2026-08-28
 **Document Version:** 1.2
 
+
+## 1.5.0 OCR Parsing Hardening
+
+The OCR reader now uses EasyOCR detections with bounding boxes rather than treating the returned strings as ordered lines. It upscales the capture, runs a primary enhancement pass plus a thresholded fallback pass, reconstructs visual rows by y-position, and sorts fragments left-to-right within each row. Candidates are then cleaned and de-duplicated without converting valid digits.
+
+This improves recall when the Local panel contains many tightly spaced names. It does not overcome a capture region that clips the list or a list that has scrolled names outside the screenshot. Those are capture/layout constraints and should be addressed by selecting a taller region or changing the EVE UI layout.
+
+Regression coverage is in `tests/test_ocr_reader.py`; it avoids loading the EasyOCR model and tests row geometry and cleanup in isolation.
 
 ## 1.4.0 Spec Alignment and Hardening
 

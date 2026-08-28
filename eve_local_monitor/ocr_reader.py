@@ -1,231 +1,269 @@
-"""OCR module for reading EVE Online Local player list from screen."""
+"""OCR module for reading EVE Online Local player lists from screen."""
 
-from PIL import ImageGrab, Image, ImageEnhance, ImageFilter
-from typing import List, Tuple, Optional
-import re
-import numpy as np
-import easyocr
+from collections import OrderedDict
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 import os
+import re
+
+import easyocr
+import numpy as np
+from PIL import Image, ImageEnhance, ImageFilter, ImageGrab, ImageOps
+
+
+BBox = Sequence[Sequence[float]]
+Detection = Tuple[BBox, str, float]
 
 
 class LocalReader:
-    """Reads player names from EVE Local window using OCR."""
+    """Reads player names from EVE Local using row-aware OCR reconstruction."""
+
+    MIN_CONFIDENCE = 0.20
+    UPSCALE_FACTOR = 2
+    ROW_TOLERANCE = 0.60
 
     def __init__(self, region: Optional[Tuple[int, int, int, int]] = None):
-        """
-        Initialize OCR reader.
-
-        Args:
-            region: Screen region to capture (left, top, right, bottom).
-                   If None, must be set via configure_region()
-        """
         self.region = region
-        self.screenshot_path = None  # Path to save last screenshot
+        self.screenshot_path = None
 
-        # Initialize EasyOCR
         print("Initializing EasyOCR (this may take a moment on first run)...")
-        self.easyocr_reader = easyocr.Reader(['en'], gpu=False)
+        self.easyocr_reader = easyocr.Reader(["en"], gpu=False)
         print("EasyOCR initialized successfully!")
 
     def configure_region(self, region: Tuple[int, int, int, int]):
-        """
-        Set the screen region to capture.
-
-        Args:
-            region: (left, top, right, bottom) coordinates
-        """
+        """Set the screen region to capture."""
         self.region = region
 
     def capture_screenshot(self) -> Optional[Image.Image]:
-        """
-        Capture screenshot of the configured region.
-
-        Returns:
-            PIL Image or None if region not configured
-        """
+        """Capture the configured Local player-list region."""
         if not self.region:
             print("Error: Screen region not configured")
             return None
 
         try:
-            screenshot = ImageGrab.grab(bbox=self.region)
-            return screenshot
-        except Exception as e:
-            print(f"Error capturing screenshot: {e}")
+            return ImageGrab.grab(bbox=self.region)
+        except Exception as exc:
+            print(f"Error capturing screenshot: {exc}")
             return None
 
     def preprocess_image(self, image: Image.Image) -> Image.Image:
+        """Return the primary enlarged, contrast-enhanced OCR image."""
+        gray = image.convert("L")
+        width, height = gray.size
+        enlarged = gray.resize(
+            (width * self.UPSCALE_FACTOR, height * self.UPSCALE_FACTOR),
+            Image.Resampling.LANCZOS,
+        )
+        enhanced = ImageOps.autocontrast(enlarged, cutoff=1)
+        enhanced = ImageEnhance.Contrast(enhanced).enhance(1.35)
+        enhanced = ImageEnhance.Sharpness(enhanced).enhance(1.6)
+        return enhanced
+
+    def _preprocess_variants(self, image: Image.Image) -> Iterable[Image.Image]:
+        """Yield complementary OCR inputs for dim or dense Local rows."""
+        primary = self.preprocess_image(image)
+        yield primary
+
+        # A second pass helps when anti-aliased text blends into the EVE UI.
+        threshold = primary.filter(ImageFilter.MedianFilter(size=3))
+        threshold = threshold.point(lambda pixel: 255 if pixel >= 145 else 0)
+        yield threshold
+
+    def _read_detections(self, image: Image.Image) -> List[Detection]:
+        """Read bounding boxes, text, and confidence from one OCR pass."""
+        try:
+            results = self.easyocr_reader.readtext(
+                np.array(image),
+                detail=1,
+                paragraph=False,
+                width_ths=0.35,
+                ycenter_ths=0.5,
+                height_ths=0.5,
+                mag_ratio=1.0,
+            )
+        except Exception as exc:
+            print(f"Error extracting text: {exc}")
+            return []
+
+        detections = []
+        for result in results:
+            if len(result) != 3:
+                continue
+            bbox, text, confidence = result
+            if not str(text).strip():
+                continue
+            try:
+                score = float(confidence)
+            except (TypeError, ValueError):
+                continue
+            if score >= self.MIN_CONFIDENCE:
+                detections.append((bbox, str(text), score))
+        return detections
+
+    @staticmethod
+    def _box_geometry(bbox: BBox) -> Tuple[float, float, float]:
+        xs = [float(point[0]) for point in bbox]
+        ys = [float(point[1]) for point in bbox]
+        return min(xs), (min(ys) + max(ys)) / 2.0, max(ys) - min(ys)
+
+    def reconstruct_rows(
+        self, detections: Sequence[Detection]
+    ) -> List[Tuple[str, float]]:
         """
-        Preprocess image for better OCR accuracy.
+        Reconstruct visual rows from EasyOCR detections.
 
-        Args:
-            image: Original PIL Image
-
-        Returns:
-            Preprocessed PIL Image
+        EasyOCR does not guarantee stable reading order in a dense panel. Grouping
+        by vertical center and then sorting by x-coordinate restores the Local
+        list's visual order and also joins icon/name fragments on one row.
         """
-        # Convert to grayscale
-        image = image.convert('L')
+        ordered = []
+        for bbox, text, confidence in detections:
+            left, center_y, height = self._box_geometry(bbox)
+            if height <= 0:
+                continue
+            ordered.append((left, center_y, height, text, confidence))
 
-        # Increase contrast
-        enhancer = ImageEnhance.Contrast(image)
-        image = enhancer.enhance(2.0)
+        ordered.sort(key=lambda item: (item[1], item[0]))
+        rows: List[dict[str, Any]] = []
 
-        # Increase sharpness
-        enhancer = ImageEnhance.Sharpness(image)
-        image = enhancer.enhance(1.5)
+        for left, center_y, height, text, confidence in ordered:
+            matching_row = None
+            best_distance = None
+            for row in rows:
+                tolerance = max(4.0, min(height, row["height"]) * self.ROW_TOLERANCE)
+                distance = abs(center_y - row["center_y"])
+                if distance <= tolerance and (
+                    best_distance is None or distance < best_distance
+                ):
+                    matching_row = row
+                    best_distance = distance
 
-        # Apply slight blur to reduce noise (optional)
-        # image = image.filter(ImageFilter.MedianFilter(size=3))
+            if matching_row is None:
+                rows.append(
+                    {
+                        "center_y": center_y,
+                        "height": height,
+                        "parts": [(left, text, confidence)],
+                    }
+                )
+            else:
+                matching_row["parts"].append((left, text, confidence))
+                count = len(matching_row["parts"])
+                matching_row["center_y"] = (
+                    matching_row["center_y"] * (count - 1) + center_y
+                ) / count
+                matching_row["height"] = max(matching_row["height"], height)
 
-        return image
+        rows.sort(key=lambda row: row["center_y"])
+        reconstructed = []
+        for row in rows:
+            parts = sorted(row["parts"], key=lambda part: part[0])
+            text = " ".join(part[1].strip() for part in parts).strip()
+            confidence = sum(part[2] for part in parts) / len(parts)
+            reconstructed.append((text, confidence))
+        return reconstructed
 
     def extract_text(self, image: Image.Image) -> str:
-        """
-        Extract text from image using EasyOCR with preprocessing.
+        """Extract row-reconstructed text for compatibility with callers."""
+        rows = []
+        for variant in self._preprocess_variants(image):
+            detections = self._read_detections(variant)
+            rows.extend(self.reconstruct_rows(detections))
+        return "\n".join(text for text, _ in rows)
 
-        Args:
-            image: PIL Image to process
+    @staticmethod
+    def _clean_candidate(line: str) -> Optional[str]:
+        """Clean one OCR row, returning None when it is not a player name."""
+        cleaned = " ".join(line.strip().split())
+        if not cleaned:
+            return None
 
-        Returns:
-            Extracted text
-        """
-        try:
-            # Preprocess image
-            processed = self.preprocess_image(image)
+        folded = cleaned.casefold()
+        if any(
+            keyword in folded
+            for keyword in ("eve system", "concord", "edencom", "local", "members")
+        ):
+            return None
 
-            # Convert PIL Image to numpy array
-            img_array = np.array(processed)
+        digit_count = sum(character.isdigit() for character in cleaned)
+        if digit_count > len(cleaned) // 2:
+            return None
+        if len(cleaned) < 3 or len(cleaned) > 40:
+            return None
 
-            # Read text with EasyOCR
-            results = self.easyocr_reader.readtext(img_array, detail=0, paragraph=False)
+        # Remove common EVE UI icon fragments without changing valid digits.
+        if len(cleaned) > 2 and cleaned[0] in "IlBS" and cleaned[1] == " ":
+            if cleaned[2].isupper():
+                cleaned = cleaned[2:].strip()
+        if len(cleaned) > 3 and cleaned[0] in "IlBS" and cleaned[1] in "IlBS":
+            if cleaned[2] == " ":
+                cleaned = cleaned[3:].strip()
+        if (
+            len(cleaned) > 2
+            and cleaned[0] in "BS"
+            and cleaned[1].isupper()
+            and cleaned[2].islower()
+        ):
+            cleaned = cleaned[1:]
+        if len(cleaned) > 2 and cleaned.endswith((" i", " l")):
+            cleaned = cleaned[:-2].strip()
 
-            # Join all detected text with newlines
-            text = '\n'.join(results)
-            return text
-        except Exception as e:
-            print(f"Error extracting text: {e}")
-            return ""
+        if not re.fullmatch(r"[A-Za-z0-9\s']+", cleaned):
+            return None
+        if sum(character.isalpha() for character in cleaned) < len(cleaned) * 0.6:
+            return None
+        return cleaned
 
     def parse_player_names(self, text: str) -> List[str]:
-        """
-        Parse player names from OCR text.
+        """Parse and de-duplicate player names from newline-separated OCR rows."""
+        names = OrderedDict()
+        for line in text.splitlines():
+            candidate = self._clean_candidate(line)
+            if candidate:
+                names.setdefault(candidate, None)
+        return list(names)
 
-        EVE player names:
-        - 3-37 characters long
-        - Can contain letters, numbers, spaces, apostrophes
-        - Usually one name per line in Local
-
-        Args:
-            text: Raw OCR text
-
-        Returns:
-            List of cleaned player names
-        """
-        lines = text.split('\n')
-        player_names = []
-
-        for line in lines:
-            line = line.strip()
-
-            # Skip empty lines
-            if not line:
-                continue
-
-            # Skip lines that are clearly not player names
-            # (timestamps, system messages, etc.)
-            if any(keyword in line for keyword in ['EVE System', 'CONCORD', 'EDENCOM', 'Local', 'members']):
-                continue
-
-            # Skip lines with too many numbers (likely timestamps or stats)
-            if sum(c.isdigit() for c in line) > len(line) // 2:
-                continue
-
-            # Skip very short or very long lines
-            if len(line) < 3 or len(line) > 40:
-                continue
-
-            # Clean up OCR artifacts
-            # Remove common misreads
-            cleaned = line.replace('|', '').replace('0', 'O')
-
-            # Remove leading/trailing whitespace and common OCR artifacts
-            cleaned = cleaned.strip()
-
-            # Smarter removal of UI icon artifacts
-            # Pattern 1: Single char + space + name (e.g., "B BIGBUSSY" or "S Billy")
-            if len(cleaned) > 2 and cleaned[0] in 'IlBS' and cleaned[1] == ' ' and cleaned[2].isupper():
-                cleaned = cleaned[2:].strip()
-
-            # Pattern 2: Double artifacts (e.g., "SB Billy")
-            if len(cleaned) > 3 and cleaned[0] in 'IlBS' and cleaned[1] in 'IlBS' and cleaned[2] == ' ':
-                cleaned = cleaned[3:].strip()
-
-            # Pattern 3: Merged artifacts - "B" or "S" stuck to name with no space
-            # Only remove if followed by uppercase + lowercase (e.g., "BAtlugh" -> "Atlugh")
-            # Don't remove if all caps (e.g., "BIGBUSSY" stays as-is)
-            if (len(cleaned) > 2 and
-                cleaned[0] in 'BS' and
-                cleaned[1].isupper() and
-                len(cleaned) > 2 and
-                cleaned[2].islower()):
-                cleaned = cleaned[1:]
-
-            # Remove trailing 'i' or 'l' followed by space (e.g., "Name i")
-            if len(cleaned) > 2 and cleaned[-2:].strip() and cleaned[-2] == ' ' and cleaned[-1] in 'il':
-                cleaned = cleaned[:-2].strip()
-
-            # Only accept if it looks like a valid character name
-            # Letters, numbers, spaces, apostrophes
-            if re.match(r"^[A-Za-z0-9\s']+$", cleaned) and len(cleaned) >= 3:
-                # Final validation: check if it's mostly letters (not just numbers)
-                letter_count = sum(c.isalpha() for c in cleaned)
-                if letter_count >= len(cleaned) * 0.6:  # At least 60% letters
-                    player_names.append(cleaned.strip())
-
-        return player_names
-
-    def set_screenshot_path(self, path: str):
-        """
-        Set the path where screenshots should be saved.
-
-        Args:
-            path: Full file path for saving screenshots
-        """
-        self.screenshot_path = path
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    def parse_rows(self, rows: Sequence[Tuple[str, float]]) -> List[str]:
+        """Parse reconstructed rows while retaining first-seen visual order."""
+        names = OrderedDict()
+        for text, _confidence in rows:
+            candidate = self._clean_candidate(text)
+            if candidate:
+                names.setdefault(candidate, None)
+        return list(names)
 
     def read_local_players(self) -> List[str]:
         """
-        Capture screenshot and extract player names.
+        Capture and OCR Local using two complementary passes.
 
-        Returns:
-            List of player names from Local
+        Candidates are merged by exact cleaned text, preserving visual order from
+        the primary pass and adding names only found by the fallback pass.
         """
         screenshot = self.capture_screenshot()
-        if not screenshot:
+        if screenshot is None:
             return []
 
-        # Save screenshot to file if path is set
         if self.screenshot_path:
             try:
                 screenshot.save(self.screenshot_path)
-            except Exception as e:
-                print(f"Warning: Could not save screenshot to {self.screenshot_path}: {e}")
+            except Exception as exc:
+                print(f"Warning: Could not save screenshot to {self.screenshot_path}: {exc}")
 
-        text = self.extract_text(screenshot)
-        player_names = self.parse_player_names(text)
+        names = OrderedDict()
+        for variant in self._preprocess_variants(screenshot):
+            rows = self.reconstruct_rows(self._read_detections(variant))
+            for name in self.parse_rows(rows):
+                names.setdefault(name, None)
+        return list(names)
 
-        return player_names
+    def set_screenshot_path(self, path: str):
+        """Set the path where the latest screenshot is saved."""
+        self.screenshot_path = path
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
 
     def save_debug_screenshot(self, filepath: str = "debug_screenshot.png"):
-        """
-        Save a screenshot for debugging OCR region.
-
-        Args:
-            filepath: Where to save the screenshot
-        """
+        """Save a screenshot for debugging OCR region selection."""
         screenshot = self.capture_screenshot()
         if screenshot:
             screenshot.save(filepath)

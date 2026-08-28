@@ -4,7 +4,7 @@ Real-time threat monitoring for EVE Online using OCR and player intelligence dat
 
 ## Features
 
-- **OCR-based Player Detection** - Automatically reads player names from your Local chat window
+- **OCR-based Player Detection** - Reads dense Local lists with row-aware, multi-pass OCR
 - **Threat Analysis** - Analyzes players using ESI API and zKillboard statistics
 - **Danger Ratings** - Calculates threat levels (0-100%) based on PvP activity
 - **Web Dashboard** - Real-time web interface with auto-refresh
@@ -83,7 +83,7 @@ cache_expiry = 3600
 ## How It Works
 
 1. **OCR Scanning** - Captures your EVE Local window region every 10 seconds
-2. **Text Recognition** - Uses EasyOCR to extract player names
+2. **Text Recognition** - Upscales the image, runs complementary OCR passes, and reconstructs visual rows
 3. **API Queries** - Fetches character, corporation, and alliance data from ESI
 4. **Threat Analysis** - Retrieves PvP statistics from zKillboard
 5. **Danger Calculation** - Calculates threat rating based on kills, deaths, and activity
@@ -153,6 +153,6 @@ MIT License - See LICENSE file for details
 
 ## Version
 
-Current version: 1.4.0
+Current version: 1.5.0
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the design contract and [CHANGELOG.md](CHANGELOG.md) for version history.

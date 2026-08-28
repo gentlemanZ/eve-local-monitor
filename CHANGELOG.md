@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-28
+
+### Changed
+- Reworked OCR around EasyOCR bounding boxes and visual row reconstruction.
+- Added image upscaling and a complementary thresholded fallback pass.
+- Preserved valid digits during cleanup and de-duplicated OCR candidates.
+
+### Added
+- Regression tests for dense-list ordering, split icon/name rows, and OCR cleanup.
+- Documentation of the OCR capture boundary: clipped or scrolled-out names cannot be recovered.
+
 ## [1.4.0] - 2026-08-28
 
 ### Changed

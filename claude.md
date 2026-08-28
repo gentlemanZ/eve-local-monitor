@@ -4,7 +4,7 @@
 
 EVE Online Local Threat Monitor is a real-time threat analysis tool that uses OCR to read player names from the EVE Online Local chat window, then queries ESI and zKillboard APIs to provide threat intelligence. Features both a CLI display and a web-based dashboard.
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 **Language:** Python 3.8+
 **Primary Dependencies:** EasyOCR, Flask, Pillow, Requests
 
@@ -632,5 +632,19 @@ async fetchNewData() {
 
 ---
 
-**Last Updated:** 2026-01-07
-**Document Version:** 1.1
+**Last Updated:** 2026-08-28
+**Document Version:** 1.2
+
+
+## 1.4.0 Spec Alignment and Hardening
+
+This branch makes the following contract changes:
+
+- `config.ini` is the source of truth for both `scan_interval` and `cache_expiry`; runtime values are applied in `main.py`.
+- OCR names are normalized for surrounding/repeated whitespace and de-duplicated before API enrichment.
+- Threat policy is unified across analyzer, CLI, and dashboard: High `>=70`, Medium `>=40`, Low `>0` and `<40`, Unknown `0` or unavailable.
+- The dashboard treats a zero danger ratio as Unknown and tolerates an absent optional connection-status element.
+- `ARCHITECTURE.md` is the concise implementation contract; this document remains the detailed historical reference.
+- `tests/test_threat_analyzer.py` covers normalization, filtering, TTL behavior, and policy boundaries.
+
+The next lifecycle hardening step should replace the web server's independent control booleans with an explicit state machine. That is intentionally documented as a follow-up rather than mixed into this compatibility-focused branch.

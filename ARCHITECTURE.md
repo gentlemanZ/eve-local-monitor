@@ -81,6 +81,20 @@ The minimum regression suite should cover:
 - ESI/zKillboard response parsing with empty and malformed upstream data.
 - Dashboard control responses and lifecycle transitions using fake dependencies.
 
+## OCR design for dense Local lists
+
+EasyOCR returns text detections with bounding boxes, not guaranteed visual order. The reader therefore:
+
+1. Captures the configured region and saves the raw image for diagnostics.
+2. Upscales the image before recognition to preserve small Local text.
+3. Runs a contrast/sharpness pass and a thresholded fallback pass.
+4. Groups detections by vertical center into visual rows.
+5. Sorts fragments left-to-right within each row, so UI icons and names can be joined.
+6. Cleans and de-duplicates candidates while preserving row order.
+7. Leaves valid digits unchanged; cleanup must not silently mutate a character name.
+
+The fallback pass is merged by cleaned text. This improves recall in dense lists without changing the downstream ESI/zKillboard identity contract. A configured capture region still limits the maximum names visible to OCR; if the Local panel is clipped or scrolled, no parser can recover names that are outside the screenshot.
+
 ## Changes in this branch
 
 - Made `cache_expiry` from `config.ini` active at runtime.

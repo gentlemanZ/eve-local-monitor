@@ -283,25 +283,27 @@ def load_config():
 
         # Load scan interval
         scan_interval = config.getint('Monitoring', 'scan_interval', fallback=10)
+        cache_expiry = config.getint('Monitoring', 'cache_expiry', fallback=3600)
 
-        return character_name, region, scan_interval
+        return character_name, region, scan_interval, cache_expiry
 
     # Default values if no config file
-    return "T zhong", None, 10
+    return "T zhong", None, 10, 3600
 
 
 def main():
     """Main entry point."""
     # Load configuration
-    character_name, region, scan_interval = load_config()
+    character_name, region, scan_interval, cache_expiry = load_config()
 
     monitor = LocalThreatMonitor(
         screen_region=region,
         character_name=character_name
     )
 
-    # Set scan interval
-    monitor.scan_interval = scan_interval
+    # Apply runtime configuration in one place.
+    monitor.scan_interval = max(1, scan_interval)
+    monitor.analyzer.cache_expiry = max(0, cache_expiry)
 
     # Interactive setup if no region configured
     if not monitor.screen_region:

@@ -212,7 +212,7 @@ class ThreatDashboard {
 
         container.innerHTML = threats.map(threat => {
             // Use danger_ratio from backend
-            const dangerRatio = threat.danger_ratio || 0;
+            const dangerRatio = threat.danger_ratio ?? 0;
             const dangerLevel = this.getDangerLevel(dangerRatio);
             const indicator = this.getDangerIndicator(dangerRatio);
 
@@ -261,7 +261,7 @@ class ThreatDashboard {
         if (dangerPercent === null || dangerPercent === undefined) return '⚪';
         if (dangerPercent >= 70) return '🔴';
         if (dangerPercent >= 40) return '🟡';
-        return '🟢';
+        return dangerPercent > 0 ? '🟢' : '⚪';
     }
 
     formatShips(ships) {
@@ -282,6 +282,7 @@ class ThreatDashboard {
 
     updateConnectionStatus(isOnline) {
         const indicator = document.getElementById('connection-status');
+        if (!indicator) return;
         if (isOnline) {
             indicator.className = 'status-indicator online';
         } else {

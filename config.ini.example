@@ -15,5 +15,5 @@ region_bottom =
 # How often to scan Local (in seconds)
 scan_interval = 10
 
-# Cache expiry for player data (in seconds)
+# Cache expiry for player data (in seconds; applied by the analyzer)
 cache_expiry = 3600

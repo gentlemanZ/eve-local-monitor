@@ -1,48 +1,44 @@
 """Threat analysis and player tracking."""
 
-from typing import List, Dict, Set
+from typing import List, Dict
 import time
 
 
 class ThreatAnalyzer:
     """Analyzes and ranks player threats."""
 
-    def __init__(self, exclude_character: str = ""):
+    def __init__(self, exclude_character: str = "", cache_expiry: int = 3600):
         """
         Initialize threat analyzer.
 
         Args:
             exclude_character: Character name to exclude (your character)
         """
-        self.exclude_character = exclude_character
+        self.exclude_character = self.normalize_name(exclude_character)
         self.known_players = {}  # char_name -> full data
         self.last_seen = {}  # char_name -> timestamp
-        self.cache_expiry = 3600  # 1 hour
+        self.cache_expiry = max(0, cache_expiry)
+
+    @staticmethod
+    def normalize_name(name: str) -> str:
+        """Normalize OCR/API names while preserving EVE internal spaces."""
+        return " ".join(str(name).strip().split())
 
     def filter_new_players(self, player_names: List[str]) -> List[str]:
-        """
-        Filter to only new or updated players.
-
-        Args:
-            player_names: List of all current player names
-
-        Returns:
-            List of player names that need analysis
-        """
+        """Return unique, normalized names that are new or past the TTL."""
         current_time = time.time()
         new_players = []
+        seen = set()
 
-        for name in player_names:
-            # Skip excluded character
-            if name == self.exclude_character:
+        for raw_name in player_names:
+            name = self.normalize_name(raw_name)
+            if not name or name in seen or name == self.exclude_character:
                 continue
+            seen.add(name)
 
-            # Check if we need to analyze this player
             if name not in self.known_players:
-                # Never seen before
                 new_players.append(name)
             elif current_time - self.last_seen.get(name, 0) > self.cache_expiry:
-                # Cache expired, re-analyze
                 new_players.append(name)
 
         return new_players
@@ -83,11 +79,12 @@ class ThreatAnalyzer:
         """
         threats = []
 
-        for name in current_players:
+        for raw_name in current_players:
+            name = self.normalize_name(raw_name)
             if name == self.exclude_character:
                 continue
 
-            if name in self.known_players:
+            if name in self.known_players and self.known_players[name] not in threats:
                 threats.append(self.known_players[name])
 
         # Sort by danger ratio (highest first)
@@ -109,10 +106,10 @@ class ThreatAnalyzer:
             return "HIGH"
         elif danger_ratio >= 40:
             return "MEDIUM"
-        elif danger_ratio >= 10:
+        elif danger_ratio > 0:
             return "LOW"
         else:
-            return "MINIMAL"
+            return "UNKNOWN"
 
     def get_threat_emoji(self, danger_ratio: float) -> str:
         """
@@ -128,7 +125,7 @@ class ThreatAnalyzer:
             return "🔴"
         elif danger_ratio >= 40:
             return "🟡"
-        elif danger_ratio >= 10:
+        elif danger_ratio > 0:
             return "🟢"
         else:
             return "⚪"
@@ -150,4 +147,5 @@ class ThreatAnalyzer:
                 offline_players.append(name)
 
         # We keep their data in cache, but they're not "active"
-        # This way if they come back, we still have their info
+        # This way, if they come back, we still have their info.
+        return offline_players

@@ -2,28 +2,19 @@
 
 ## Prerequisites
 
-### 1. Install Tesseract OCR
+### 1. Install Python dependencies
 
-Tesseract is required for reading text from screenshots.
-
-**Download**: https://github.com/UB-Mannheim/tesseract/wiki
-
-1. Download the Windows installer (tesseract-ocr-w64-setup-v5.x.x.exe)
-2. Run the installer
-3. **IMPORTANT**: During installation, check "Add to PATH"
-4. Default installation path: `C:\Program Files\Tesseract-OCR\`
-
-### 2. Install Python Dependencies
+Python 3.8 or higher is required. The monitor uses EasyOCR for text recognition; Tesseract is not required.
 
 ```bash
-cd "C:\Users\tiany\Claude Project\eve-local-monitor"
 pip install -r requirements.txt
 ```
 
 This installs:
-- **Pillow**: Screenshot capture
-- **pytesseract**: OCR text extraction
-- **requests**: API calls to ESI and zKillboard
+- **Pillow**: Screenshot capture and image preprocessing
+- **EasyOCR**: Player-name recognition
+- **requests**: ESI and zKillboard API clients
+- **Flask / Flask-CORS**: Local dashboard
 
 ## Configuration
 

@@ -101,7 +101,7 @@ class ThreatDisplay:
             print(f"{emoji} {name:<20} {corp:<25} {danger:<8} {kd:<8} {ships}")
 
         print("-"*80)
-        print(f"Legend: 🔴 High Threat (70%+)  🟡 Medium (40-70%)  🟢 Low (10-40%)  ⚪ Minimal (<10%)")
+        print(f"Legend: 🔴 High Threat (70%+)  🟡 Medium (40-70%)  🟢 Low (0-40%)  ⚪ Unknown (0% or no data)")
         print("="*80)
 
     def _get_emoji(self, danger_ratio: float) -> str:
@@ -110,7 +110,7 @@ class ThreatDisplay:
             return "🔴"
         elif danger_ratio >= 40:
             return "🟡"
-        elif danger_ratio >= 10:
+        elif danger_ratio > 0:
             return "🟢"
         else:
             return "⚪"

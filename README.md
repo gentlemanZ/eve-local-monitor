@@ -9,7 +9,7 @@ Real-time threat monitoring for EVE Online using OCR and player intelligence dat
 - **Danger Ratings** - Calculates threat levels (0-100%) based on PvP activity
 - **Web Dashboard** - Real-time web interface with auto-refresh
 - **CLI Display** - Terminal-based display with color-coded indicators
-- **Smart Caching** - Reduces API calls with 1-hour player data cache
+- **Smart Caching** - Configurable TTL reduces API calls while preserving fresh data
 
 ## Quick Start
 
@@ -153,6 +153,6 @@ MIT License - See LICENSE file for details
 
 ## Version
 
-Current version: 1.2.0
+Current version: 1.4.0
 
-See CHANGELOG.md for version history.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the design contract and [CHANGELOG.md](CHANGELOG.md) for version history.

@@ -1,7 +1,7 @@
 """OCR module for reading EVE Online Local player lists from screen."""
 
 from collections import OrderedDict
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 import os
 import re
 
@@ -51,7 +51,7 @@ class LocalReader:
         width, height = gray.size
         enlarged = gray.resize(
             (width * self.UPSCALE_FACTOR, height * self.UPSCALE_FACTOR),
-            Image.Resampling.LANCZOS,
+            getattr(Image, "Resampling", Image).LANCZOS,
         )
         enhanced = ImageOps.autocontrast(enlarged, cutoff=1)
         enhanced = ImageEnhance.Contrast(enhanced).enhance(1.35)
@@ -123,7 +123,7 @@ class LocalReader:
             ordered.append((left, center_y, height, text, confidence))
 
         ordered.sort(key=lambda item: (item[1], item[0]))
-        rows: List[dict[str, Any]] = []
+        rows: List[Dict[str, Any]] = []
 
         for left, center_y, height, text, confidence in ordered:
             matching_row = None
